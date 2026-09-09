@@ -63,6 +63,26 @@ python auto.py "http://www.langsong.net/lstd/wxshk/htm/oem/gd/xs/3/index.html" -
 | `--limit N` | 只抓前 N 章试水（强烈建议先跑） |
 | `--only-config` | 只探测并生成 `config.py`，不抓取不打包 |
 
+## 🖥 图形界面 & 打包 exe
+
+不想敲命令？附带了 tkinter 图形界面（Python 自带，零额外依赖）：
+
+```bash
+python gui.py        # 打开窗口：填网址 → 试水 → 全量
+```
+
+打包成 Windows 单文件 exe（先 `pip install pyinstaller`）：
+
+```bash
+pyinstaller --onefile --noconsole --name novel-epub-gui ^
+    --collect-all ebooklib --hidden-import auto --hidden-import fetch ^
+    --hidden-import build_epub --exclude-module config gui.py
+```
+
+- 产物在 `dist/novel-epub-gui.exe`，双击即用（无需安装 Python）。
+- 把 exe 放到**有写权限的文件夹**（如桌面、`D:\`），程序会在同目录生成 `data/`、`output/`、`config.py`。
+- exe 在进程内直调各模块，无需 Python 环境；合规边界与命令行版完全一致。
+
 ## 🗂 目录结构
 
 ```
@@ -75,6 +95,7 @@ novel_epub/
 ├── auto.py            # 主程序：探测 → 生成 config → 抓取 → 打包
 ├── fetch.py           # 抓取模块（断点续传 / 限速 / 重试）
 ├── build_epub.py      # EPUB 打包模块
+├── gui.py             # 图形界面（tkinter），可打包成 exe
 ├── config.py          # 由 auto.py 自动生成的配置（首次运行 auto 后出现）
 ├── data/              # 本地：章节正文缓存（不入库）
 └── output/            # 本地：生成的 EPUB（不入库）
