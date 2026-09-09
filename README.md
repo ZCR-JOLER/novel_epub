@@ -4,6 +4,24 @@
 
 > 给定一本**你有权获取**的书的「目录页网址」，程序自动识别网站结构、抓取正文、打包成标准 EPUB。
 
+## 🚀 免安装直接用：Windows 单文件版（推荐）
+
+**不用装 Python，双击即用。** 打包好的单个 exe：
+
+- **下载**：到本仓库 **Releases** 页下载 `novel-epub-gui.exe`（约 26 MB）；本地开发机也可直接用 `dist\novel-epub-gui.exe`（该文件不入库，仅本地打包产物）
+- **用法**：双击打开窗口 → 粘贴「目录页网址」→ 先点「② 试水（前3章）」→ 确认后点「③ 全量抓取+打包」
+- **产出位置**：抓的书与成品 EPUB 直接生成在 **exe 同目录**的 `data\`、`output\`（无需管理员权限，别放 `C:\Program Files`）
+- **没有现成 exe 时**：在项目目录执行下方打包命令即可自行生成
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --noconsole --name novel-epub-gui ^
+    --collect-all ebooklib --hidden-import auto --hidden-import fetch ^
+    --hidden-import build_epub --exclude-module config gui.py
+```
+
+如果你想用源码跑（Windows/macOS/Linux 均可），见下方 [安装](#-安装) 与 [快速开始](#-快速开始)。
+
 ## ⚠️ 合规声明（请先读）
 
 本工具**只支持你有权获取的内容**，并内置了对应的边界：

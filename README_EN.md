@@ -4,6 +4,26 @@
 
 > Give the **table-of-contents URL** of a book you are **entitled to read/download**, and the tool detects the site layout, downloads the chapters, and packages them into a standard EPUB.
 
+## 🚀 No-install Windows standalone exe (recommended)
+
+**No Python required — just double-click.**
+
+- **Download**: get `novel-epub-gui.exe` (~26 MB) from the **Releases** page of this repo.
+  (Local dev builds also land in `dist\novel-epub-gui.exe`; binaries are not committed to the repo.)
+- **Usage**: double-click → paste a table-of-contents URL → click “② 试水 (first 3 chapters)” → then “③ 全量抓取+打包”.
+- **Outputs**: books & EPUBs are written **next to the exe** into `data\` and `output\`
+  (needs write permission — don't place it under `C:\Program Files`).
+- **Build it yourself** (if you want the latest code as an exe):
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --noconsole --name novel-epub-gui ^
+    --collect-all ebooklib --hidden-import auto --hidden-import fetch ^
+    --hidden-import build_epub --exclude-module config gui.py
+```
+
+Prefer running from source (Windows/macOS/Linux)? See [Install](#-install) and [Quick start](#-quick-start).
+
 ## ⚠️ Responsible-use notice (please read first)
 
 This tool only supports content you have the right to obtain, with those limits enforced by design:
