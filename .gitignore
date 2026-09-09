@@ -8,7 +8,9 @@ data/
 output/
 debug/
 
-# 自动生成的配置备份
+# 自动生成的配置：config.py 由 auto.py/gui 每次运行自动重写，不入库；
+# 模板请看 config.example.py（需要手动改结构时复制一份为 config.py）
+config.py
 config.py.bak
 
 # 日志 / 临时文件

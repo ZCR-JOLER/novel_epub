@@ -55,6 +55,13 @@ python auto.py "http://www.langsong.net/lstd/wxshk/htm/oem/gd/xs/3/index.html" -
 ```
 
 EPUBs are written to `output/`, chapter caches to `data/` (resumable).
+`config.py` is generated automatically (git-ignored). To tweak a site by hand,
+copy `config.example.py` to `config.py` and edit that.
+
+> GUI users: there is a **fetch interval (ms)** box — leave it blank for the
+> polite default (1500–3000 ms per chapter), type a number to force a fixed
+> interval, and if you go below the 500 ms safety floor the app clamps to the
+> fastest speed and shows *"已使用最大速度提取"* (fastest extraction in use).
 
 ### Options
 
@@ -75,7 +82,9 @@ novel_epub/
 ├── auto.py            # Entry: probe → generate config → fetch → build
 ├── fetch.py           # Downloader (resume / rate limit / retry)
 ├── build_epub.py      # EPUB packager
-├── config.py          # Auto-generated config (appears after the first auto.py run)
+├── gui.py             # tkinter GUI (also the exe entry)
+├── config.example.py  # Config template (config.py is auto-generated & git-ignored)
+├── config.py          # Local, auto-written by auto.py/gui (ignored by git)
 ├── data/              # Local chapter cache (not committed)
 └── output/            # Local EPUB output (not committed)
 ```
@@ -103,6 +112,10 @@ A: Read the error. If it says "JS-rendered site (SPA)", the text is not in the H
 
 **Q: How to fetch only some chapters?**
 A: Set `RANGE` in `config.py` (e.g. `RANGE = [1,2,3]`) and run `python fetch.py`.
+
+**Q: `config.py` keeps changing / shows as modified?**
+A: Normal — it is rewritten on every run. It is git-ignored now; for manual
+tuning copy `config.example.py` to `config.py`.
 
 **Q: Author/title shown as `unknown`?**
 A: Legacy sites often lack metadata; the tool tries `<h1>`/meta/`<title>`. You can fix it manually in `config.py` and re-run `python build_epub.py`.

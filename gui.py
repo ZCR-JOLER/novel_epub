@@ -79,6 +79,11 @@ def bootstrap():
             f.write(DEFAULT_CONFIG)
 
 
+# GUI 限速相关常量
+DEFAULT_DELAY_TEXT = "默认 1500~3000"   # 间隔输入框的灰色占位（默认限速区间 ms）
+FASTEST_MS = 500                        # 最快允许间隔（低于它按它算并提示"已使用最大速度提取"）
+
+
 def prepare_config(url, limit=None):
     """复刻 auto.py 的探测流程：探测目录/正文结构 → 生成 config.py。"""
     import auto
@@ -118,10 +123,17 @@ def prepare_config(url, limit=None):
     print("已重写 config.py（旧配置备份为 config.py.bak）", flush=True)
 
 
-def fetch_and_build():
-    """抓正文 + 打包 EPUB（进程内调用，避免打包后找不到脚本文件）。"""
+def fetch_and_build(interval_ms=None):
+    """抓正文 + 打包 EPUB（进程内调用，避免打包后找不到脚本文件）。
+
+    interval_ms: 每章抓取间隔（毫秒）；None = 用 config.py 默认的 1.5~3s 随机限速。
+    """
     import config
     importlib.reload(config)          # 让新生成的 config 生效
+
+    if interval_ms is not None:       # 用户自定义抓取间隔
+        config.MIN_DELAY = config.MAX_DELAY = interval_ms / 1000.0
+        print("抓取间隔已设为 %d ms/章（默认 1500~3000 ms）" % interval_ms, flush=True)
 
     print("==> 第3步 抓取正文（已抓过的自动跳过，可断点续传）...", flush=True)
     import fetch
@@ -138,8 +150,11 @@ def fetch_and_build():
     return config.OUTPUT_EPUB
 
 
-def run_flow(url, limit=None, only_config=False):
-    """整条流水线：探测 → 生成 config → 抓取 → 打包。返回 EPUB 路径（仅打包时）。"""
+def run_flow(url, limit=None, only_config=False, interval_ms=None):
+    """整条流水线：探测 → 生成 config → 抓取 → 打包。返回 EPUB 路径（仅打包时）。
+
+    interval_ms: 每章间隔毫秒（None = 默认限速）。
+    """
     bootstrap()
     if not url or not url.startswith(("http://", "https://")):
         raise ValueError("请先填写正确的目录页网址（http/https 开头）")
@@ -147,7 +162,7 @@ def run_flow(url, limit=None, only_config=False):
     if only_config:
         print("已生成 config.py（未抓取）。", flush=True)
         return None
-    out = fetch_and_build()
+    out = fetch_and_build(interval_ms)
     print("全部完成！EPUB 输出：%s" % out, flush=True)
     return out
 
@@ -208,6 +223,34 @@ def main_gui():
     tk.Spinbox(row2, from_=1, to=20, width=4, textvariable=limit_var).pack(side="left")
     tk.Label(row2, text="  （先抓几章试效果，确认没问题再点全量）", fg="#666").pack(side="left")
 
+    # 抓取间隔（毫秒）：留空=默认限速；填数字=固定间隔；小于下限自动提为最快
+    row3 = tk.Frame(frm)
+    row3.grid(row=2, column=0, columnspan=3, sticky="w", pady=(6, 0))
+    tk.Label(row3, text="抓取间隔(ms)：").pack(side="left")
+    interval_var = tk.StringVar()
+    interval_entry = tk.Entry(row3, textvariable=interval_var, width=16, fg="#9a9a9a")
+    interval_entry.insert(0, DEFAULT_DELAY_TEXT)          # 灰色占位：当前默认间隔
+    interval_entry.pack(side="left", padx=(0, 6))
+
+    def ph_on_focus_in(_evt):
+        if interval_var.get() == DEFAULT_DELAY_TEXT:
+            interval_entry.delete(0, "end")
+            interval_entry.config(fg="#000000")
+
+    def ph_on_focus_out(_evt):
+        if not interval_var.get().strip():
+            interval_var.set(DEFAULT_DELAY_TEXT)
+            interval_entry.config(fg="#9a9a9a")
+
+    interval_entry.bind("<FocusIn>", ph_on_focus_in)
+    interval_entry.bind("<FocusOut>", ph_on_focus_out)
+    tk.Label(row3, text="留空=默认；填数字=每章间隔毫秒",
+             fg="#666").pack(side="left")
+
+    interval_hint_var = tk.StringVar()
+    tk.Label(frm, textvariable=interval_hint_var, anchor="w", fg="#b26a00"
+             ).grid(row=3, column=0, columnspan=3, sticky="w", padx=12, pady=(4, 0))
+
     btns = tk.Frame(root, padx=12)
     btns.pack(fill="x", pady=4)
     b_cfg = tk.Button(btns, text="① 仅生成配置", width=16)
@@ -247,6 +290,17 @@ def main_gui():
             b.config(state=state)
         url_var.set(url_var.get() or "")
 
+    def parse_interval():
+        """读间隔输入框 → (有效间隔ms, 是否被钳制到最快)。留空返回 (None, False)。"""
+        t = interval_var.get().strip()
+        if not t or t == DEFAULT_DELAY_TEXT:
+            return None, False
+        if not t.isdigit() or int(t) <= 0:
+            raise ValueError("抓取间隔必须是正整数毫秒")
+        v = int(t)
+        eff = max(v, FASTEST_MS)
+        return eff, v < FASTEST_MS
+
     def run(mode):
         url = url_var.get().strip()
         if not url:
@@ -258,12 +312,30 @@ def main_gui():
         elif mode == "try":
             limit = int(limit_var.get() or 3)
         # mode == "all" → limit=None
+
+        interval_ms = None
+        try:
+            interval_ms, clamped = parse_interval()
+        except ValueError as e:
+            messagebox.showwarning("参数错误", str(e))
+            return
+        if clamped:
+            interval_hint_var.set("已使用最大速度提取（间隔下限 %d ms/章）" % FASTEST_MS)
+        elif interval_ms:
+            interval_hint_var.set("抓取间隔：%d ms/章" % interval_ms)
+        else:
+            interval_hint_var.set("")
+
         set_busy(True)
-        status_var.set("运行中…（限速抓取，整本较慢属正常）")
+        if interval_ms:
+            status_var.set("运行中…（每章间隔 %d ms）" % interval_ms)
+        else:
+            status_var.set("运行中…（默认限速 1500~3000 ms/章）")
 
         def worker():
             try:
-                run_flow(url, limit=limit, only_config=(mode == "only_config"))
+                run_flow(url, limit=limit, only_config=(mode == "only_config"),
+                         interval_ms=interval_ms)
                 status_var.set("完成 ✅  成品 EPUB 在程序同目录的 output\\ 文件夹")
             except Exception as e:
                 print("出错了：%s" % e, flush=True)

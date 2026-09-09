@@ -55,6 +55,8 @@ python auto.py "http://www.langsong.net/lstd/wxshk/htm/oem/gd/xs/3/index.html" -
 ```
 
 完成后 EPUB 输出到 `output/`，正文缓存到 `data/`（可断点续传）。
+`config.py` 由程序自动生成（已加入 `.gitignore` 不入库）；想手动改结构时复制
+`config.example.py` 为 `config.py` 再编辑。
 
 ### 参数
 
@@ -70,6 +72,12 @@ python auto.py "http://www.langsong.net/lstd/wxshk/htm/oem/gd/xs/3/index.html" -
 ```bash
 python gui.py        # 打开窗口：填网址 → 试水 → 全量
 ```
+
+GUI 里有个**抓取间隔(ms)** 输入框：
+
+- 留空 = 使用默认礼貌限速（每章随机 1500~3000 ms）；
+- 填数字 = 按你设定的间隔抓取（单位毫秒，程序会尽量遵循）；
+- 若你填的间隔低于安全下限（500 ms/章），程序会**自动按最快速度 500 ms 执行**，并在输入框下方提示 **“已使用最大速度提取”**，避免把目标站抓挂。
 
 打包成 Windows 单文件 exe（先 `pip install pyinstaller`）：
 
@@ -96,7 +104,8 @@ novel_epub/
 ├── fetch.py           # 抓取模块（断点续传 / 限速 / 重试）
 ├── build_epub.py      # EPUB 打包模块
 ├── gui.py             # 图形界面（tkinter），可打包成 exe
-├── config.py          # 由 auto.py 自动生成的配置（首次运行 auto 后出现）
+├── config.example.py  # 配置模板（config.py 由程序自动生成且不入库）
+├── config.py          # 本地生成：auto.py/gui 自动写入（被 .gitignore 忽略）
 ├── data/              # 本地：章节正文缓存（不入库）
 └── output/            # 本地：生成的 EPUB（不入库）
 ```
@@ -124,6 +133,9 @@ A：先看报错。若是"JS 动态渲染站点(SPA)"的诊断信息，说明该
 
 **Q：怎么只抓部分章节？**
 A：把 `config.py` 的 `RANGE` 改成想要的编号列表（如 `RANGE = [1,2,3]`），再运行 `python fetch.py`。
+
+**Q：`config.py` 老是变、会显示为已修改(M)？**
+A：正常——它是每次运行自动生成的（换书即重写），已加入 `.gitignore` 不再入库。手动调整请复制 `config.example.py` 为 `config.py`。
 
 **Q：作者/书名显示 unknown？**
 A：老站目录页常缺元信息，工具已尽力从 `<h1>`/meta/`<title>` 猜测；不影响抓取与阅读，可在 `config.py` 手工改正后重跑 `python build_epub.py`。
