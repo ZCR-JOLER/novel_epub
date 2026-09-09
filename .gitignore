@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 运行产物（本书仓库不存放任何抓取的正文/书籍）
+data/
+output/
+debug/
+
+# 自动生成的配置备份
+config.py.bak
+
+# 日志 / 临时文件
+*.log
+
+# 虚拟环境
+.venv/
+venv/
+
+# 打包产物（PyInstaller 等）
+dist/
+build/
+*.spec
+
+# 系统文件
+.DS_Store
+Thumbs.db
